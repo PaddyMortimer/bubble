@@ -132,7 +132,7 @@ def bound_bubble(x, on_boundary):
 # Dirichlet boundary condition then looks as follows: ::
 
 # Define boundary condition
-p0 = Expression("1.0 + x[0]", degree=2)
+p0 = Expression("0.0", degree=2)
 bc_bubble = DirichletBC(V, p0, bound_bubble)
 
 # Next, we want to express the variational problem.  First, we need to
