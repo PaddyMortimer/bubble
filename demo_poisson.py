@@ -135,6 +135,13 @@ def bound_bubble(x, on_boundary):
 p0 = Expression("0", degree=2)
 bc_bubble = DirichletBC(V, p0, bound_bubble)
 
+p1 = Constant(-50)
+bc_left = DirichletBC(V, p1, boundary0)
+p2 = Constant(50)
+bc_right = DirichletBC(V, p2, boundary1)
+
+
+
 # Next, we want to express the variational problem.  First, we need to
 # specify the trial function :math:`u` and the test function :math:`v`,
 # both living in the function space :math:`V`. We do this by defining a
@@ -150,7 +157,7 @@ bc_bubble = DirichletBC(V, p0, bound_bubble)
 # mathematical formulas, and can be easily declared using the
 # :py:class:`Expression <dolfin.functions.expression.Expression>` class.
 # Note that the strings defining ``f`` and ``g`` use C++ syntax since,
-# for efficiency, DOLFIN will generate and compile C++ code for these
+ # for efficiency, DOLFIN will generate and compile C++ code for these
 # expressions at run-time.
 # 
 # With these ingredients, we can write down the bilinear form ``a`` and
@@ -160,12 +167,12 @@ bc_bubble = DirichletBC(V, p0, bound_bubble)
 p = TrialFunction(V)
 q = TestFunction(V)
 # Body force = rho g sin(th)
-f = Constant(0.5) # Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+rhog = Constant(10.0)
 g = Expression("(x[0]-5.0)/5.0", degree=2)
-k = Expression("x[1]*(x[1] < 0.5) + (1.0-x[1])*(x[1]>=0.5)", degree=2)
+k = Expression("pow(x[1], 3)*(x[1] < 0.5) + pow(1.0-x[1], 3)*(x[1]>=0.5)", degree=2)
 # k = Expression("0.1 + 10*exp(-(pow(x[0] - 1.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 a = inner(k*grad(p), grad(q))*dx
-L = k*f*g*q*ds
+L = k*rhog*g*q*ds
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
@@ -202,7 +209,8 @@ V = VectorFunctionSpace(mesh, "CG", 1)
 u = TrialFunction(V)
 v = TestFunction(V)
 a = inner(u, v)*dx
-L = inner(k*(grad(p) - as_vector((f, 0.0, 0.0))), v)*dx
+
+L = inner(k*(grad(p) - as_vector((rhog, 0.0, 0.0))), v)*dx
 
 u = Function(V)
 u.rename('u', 'u')
