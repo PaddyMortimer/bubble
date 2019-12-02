@@ -163,16 +163,28 @@ bc_right = DirichletBC(V, p2, boundary1)
 # With these ingredients, we can write down the bilinear form ``a`` and
 # the linear form ``L`` (using UFL operators). In summary, this reads ::
 
+boundaries = MeshFunction('size_t', mesh, 1, 0)
+for edge in edges(mesh):
+    pt = edge.midpoint()
+    if pt.x() == 0.0 or pt.x() == 10.0:
+        boundaries[edge] = 1
+    if edge.num_entities(2) == 1 and pt.x() > 0.0 and pt.x() < 10.0 and pt.y() > 0.1 and pt.y() < 0.9:
+        boundaries[edge] = 2
+
+ds = Measure('ds', subdomain_data=boundaries)
+
+U = Constant((-1.0, 0.0, 0.0))
+n = FacetNormal(mesh)
 # Define variational problem
 p = TrialFunction(V)
 q = TestFunction(V)
 # Body force = rho g sin(th)
 rhog = Constant(10.0)
 g = Expression("(x[0]-5.0)/5.0", degree=2)
-k = Expression("pow(x[1], 3)*(x[1] < 0.5) + pow(1.0-x[1], 3)*(x[1]>=0.5)", degree=2)
+k = Expression("pow(x[1], 2)*(x[1] < 0.5) + pow(1.0-x[1], 2)*(x[1]>=0.5)", degree=2)
 # k = Expression("0.1 + 10*exp(-(pow(x[0] - 1.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 a = inner(k*grad(p), grad(q))*dx
-L = k*rhog*g*q*ds
+L = k*rhog*g*q*ds(1) + dot(U, n)*q*ds(2)
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
@@ -187,7 +199,7 @@ L = k*rhog*g*q*ds
 # Compute solution
 p = Function(V)
 p.rename('p', 'p')
-solve(a == L, p, [bc_bubble])
+solve(a == L, p, [])
 
 # The function ``p`` will be modified during the call to solve. The
 # default settings for solving a variational problem have been
