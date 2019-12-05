@@ -140,6 +140,8 @@ bc_left = DirichletBC(V, p1, boundary0)
 p2 = Constant(50)
 bc_right = DirichletBC(V, p2, boundary1)
 
+pzero = Constant(0.0)
+bc_p = DirichletBC(V, pzero, boundary0)
 
 
 # Next, we want to express the variational problem.  First, we need to
@@ -173,7 +175,7 @@ for edge in edges(mesh):
 
 ds = Measure('ds', subdomain_data=boundaries)
 
-U = Constant((-1.0, 0.0, 0.0))
+U = Expression(("1.0", "0.0", "0.0"), degree=2)
 n = FacetNormal(mesh)
 # Define variational problem
 p = TrialFunction(V)
@@ -184,7 +186,7 @@ g = Expression("(x[0]-5.0)/5.0", degree=2)
 k = Expression("pow(x[1], 2)*(x[1] < 0.5) + pow(1.0-x[1], 2)*(x[1]>=0.5)", degree=2)
 # k = Expression("0.1 + 10*exp(-(pow(x[0] - 1.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
 a = inner(k*grad(p), grad(q))*dx
-L = k*rhog*g*q*ds(1) + dot(U, n)*q*ds(2)
+L = k*dot(as_vector((rhog, 0.0, 0.0)), n)*q*ds + k*dot(U, n)*q*ds(2)
 
 # Now, we have specified the variational forms and can consider the
 # solution of the variational problem. First, we need to define a
@@ -196,9 +198,17 @@ L = k*rhog*g*q*ds(1) + dot(U, n)*q*ds(2)
 # <dolfin.fem.solving.solve>` function with the arguments ``a == L``,
 # ``u`` and ``bc`` as follows: ::
 
+
+
+
 # Compute solution
 p = Function(V)
 p.rename('p', 'p')
+# A = assemble(a)
+# bc_p.apply(A)
+# b = assemble(L)
+# bc_p.apply(b)
+# solve(A, p.vector(), b)
 solve(a == L, p, [])
 
 # The function ``p`` will be modified during the call to solve. The
